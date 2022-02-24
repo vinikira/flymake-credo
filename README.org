@@ -22,7 +22,7 @@ Add Flymake Credo directory to load-path in your Emacs initialization file (init
 #+end_src
 
 ** Straight
-Add the following to you config file in order to install using straight:
+Add the following to your config file in order to install using straight:
 
 #+begin_src emacs-lisp
   (straight-use-package
