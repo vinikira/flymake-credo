@@ -44,7 +44,7 @@
   :prefix "flymake-credo-"
   :group 'elixir)
 
-(defcustom flymake-credo-strict nil
+(defcustom flymake-credo-strict t
   "Use credo in a strict mode or not."
   :group 'fymake-credo
   :type 'boolean)
