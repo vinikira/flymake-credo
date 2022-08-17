@@ -38,6 +38,7 @@
 
 (require 'json)
 (require 'project)
+(require 'cl-macs)
 
 (defgroup flymake-credo nil
   "Flymake credo functionalites."
@@ -100,7 +101,9 @@ Check for problems, then call REPORT-FN with results."
                      (if (with-current-buffer source (eq proc flymake-credo--proc))
                          (when-let* ((json-string (with-current-buffer (process-buffer proc)
                                                     (buffer-string)))
-                                     (object (ignore-errors (json-parse-string json-string)))
+                                     (object (ignore-errors (json-parse-string
+                                                             json-string
+                                                             :null-object nil)))
                                      (issues (gethash "issues" object)))
                            (cl-loop
                             for issue across issues
