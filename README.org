@@ -17,7 +17,7 @@ Add Flymake Credo directory to load-path in your Emacs initialization file (init
   ;; add to load-path
   (add-to-list 'load-path "/replace/me/to/flymake-credo/full/path")
 
-  ;; load inf-elixir feature
+  ;; load flymake-credo feature
   (require 'flymake-credo nil t)
 #+end_src
 
@@ -26,7 +26,7 @@ Add the following to your config file in order to install using straight:
 
 #+begin_src emacs-lisp
   (straight-use-package
-   '(inf-elixir :type git :host github :repo "vinikira/flymake-credo" :branch "main"))
+   '(flymake-credo :type git :host github :repo "vinikira/flymake-credo" :branch "main"))
 #+end_src
 
 * Customize

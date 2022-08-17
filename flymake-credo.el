@@ -46,7 +46,7 @@
 
 (defcustom flymake-credo-strict nil
   "Use credo in a strict mode or not."
-  :group 'inf-elixir
+  :group 'fymake-credo
   :type 'boolean)
 
 (defvar-local flymake-credo--proc nil)
