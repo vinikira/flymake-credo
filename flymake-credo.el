@@ -47,11 +47,11 @@
 
 (defcustom flymake-credo-strict t
   "Use credo in a strict mode or not."
-  :group 'fymake-credo
+  :group 'flymake-credo
   :type 'boolean)
 
 (defcustom flymake-credo-min-priority 0
-  "Min priority of error to display."
+  "Minimum priority of credo warning to be reported by flymake."
   :group 'flymake-credo
   :type 'integer)
 
@@ -84,7 +84,8 @@ Check for problems, then call REPORT-FN with results."
          (default-directory (if project
                                 (expand-file-name (project-root project))
                               default-directory))
-         (source (current-buffer)))
+         (source (current-buffer))
+         (min-priority (number-to-string flymake-credo-min-priority)))
     (save-restriction
       (widen)
 
@@ -100,7 +101,7 @@ Check for problems, then call REPORT-FN with results."
                         "--format"
                         "json"
                         "--min-priority"
-                        ,flymake-credo-min-priority
+                        ,min-priority
                         "--read-from-stdin")
              :sentinel
              (lambda (proc _event)
