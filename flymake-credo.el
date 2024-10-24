@@ -81,6 +81,10 @@ Check for problems, then call REPORT-FN with results."
                               (if project
                                   (expand-file-name (project-root project))
                                 (buffer-name))))
+         (stderr-buffer-name (format "*flymake-credo errors for %s* "
+                              (if project
+                                  (expand-file-name (project-root project))
+                                (buffer-name))))
          (default-directory (if project
                                 (expand-file-name (project-root project))
                               default-directory))
@@ -103,6 +107,7 @@ Check for problems, then call REPORT-FN with results."
                         "--min-priority"
                         ,min-priority
                         "--read-from-stdin")
+             :stderr stderr-buffer-name
              :sentinel
              (lambda (proc _event)
                (when (eq 'exit (process-status proc))
@@ -129,7 +134,8 @@ Check for problems, then call REPORT-FN with results."
                             finally (funcall report-fn diags)))
                        (flymake-log :warning "Canceling obsolete check %s"
                                     proc))
-                   (kill-buffer (process-buffer proc)))))))
+                   (kill-buffer (process-buffer proc))
+                   (kill-buffer stderr-buffer-name))))))
 
       (process-send-region flymake-credo--proc (point-min) (point-max))
       (process-send-eof flymake-credo--proc))))
