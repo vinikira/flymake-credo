@@ -55,6 +55,18 @@
   :group 'flymake-credo
   :type 'integer)
 
+(defcustom flymake-credo-config-file nil
+  "Config file to use with credo. When non-nil, the config file will
+be passed to the `--config-file' option"
+  :group 'flymake-credo
+  :type 'string)
+
+(defcustom flymake-credo-config-name "default"
+  "Config name to use with credo. When non-nil, the config name will
+be passed to the `--config-name' option"
+  :group 'flymake-credo
+  :type 'string)
+
 (defvar-local flymake-credo--proc nil)
 
 (defvar-local flymake-credo--command nil)
@@ -102,6 +114,8 @@ Check for problems, then call REPORT-FN with results."
                         "json"
                         "--min-priority"
                         ,min-priority
+                        ,(if flymake-credo-config-file (concat "--config-file=" flymake-credo-config-file) "")
+                        ,(if flymake-credo-config-name (concat "--config-name=" flymake-credo-config-name) "")
                         "--read-from-stdin")
              :sentinel
              (lambda (proc _event)
