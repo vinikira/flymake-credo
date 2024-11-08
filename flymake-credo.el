@@ -71,6 +71,44 @@ be passed to the `--config-name' option"
 
 (defvar-local flymake-credo--command nil)
 
+(defun flymake-credo--get-column (lineno goto-column-fn)
+  (save-excursion
+    (save-restriction
+      (widen)
+      (goto-line lineno)
+      (funcall goto-column-fn)
+      (1+ (current-column)))))
+
+(defun flymake-credo--column-start (issue)
+  "Returns the start column of the diagnostic
+
+`ISSUE' is a hash containing credo's diagnostic for a single issue. If key `column' is part of the object, return it.
+Otherwise, return the start of the indentation of the line in key `line_no' of `ISSUE'"
+  (let ((column (gethash "column" issue))
+        (lineno (gethash "line_no" issue)))
+    (if column column
+      (flymake-credo--get-column lineno #'back-to-indentation))))
+
+(defun flymake-credo--column-end (issue)
+  "Returns the end column of the diagnostic
+
+`ISSUE' is a hash containing credo's diagnostic for a single issue. If key `column_end' is part of the object, return it.
+Otherwise, return the end of the line in key `line_no' of `ISSUE'"
+  (let ((column-end (gethash "column_end" issue))
+        (lineno (gethash "line_no" issue)))
+    (if column-end column-end
+      (flymake-credo--get-column lineno #'end-of-line))))
+
+(defun flymake-credo--get-pos (lineno column)
+  "Get buffer  position at line `LINENO' and column `COLUMN'"
+  (save-excursion
+    (save-restriction
+      (widen)
+      (goto-line lineno)
+      (beginning-of-line)
+      (forward-char (1- column))
+      (point))))
+
 (defun flymake-credo (report-fn &rest _args)
   "Credo linter backend for Flymake.
 Check for problems, then call REPORT-FN with results."
@@ -126,28 +164,25 @@ Check for problems, then call REPORT-FN with results."
              (lambda (proc _event)
                (when (eq 'exit (process-status proc))
                  (unwind-protect
-                     (if (with-current-buffer source (eq proc flymake-credo--proc))
-                         (when-let* ((json-string (with-current-buffer (process-buffer proc)
-                                                    (buffer-string)))
-                                     (object (ignore-errors (json-parse-string
-                                                             json-string
-                                                             :null-object nil)))
-                                     (issues (gethash "issues" object)))
-                           (cl-loop
-                            for issue across issues
-                            for (beg . end) = (flymake-diag-region
-                                               source
-                                               (gethash "line_no" issue)
-                                               (gethash "column" issue))
-                            collect (flymake-make-diagnostic source
-                                                             beg
-                                                             end
-                                                             :warning
-                                                             (gethash "message" issue))
-                            into diags
-                            finally (funcall report-fn diags)))
-                       (flymake-log :warning "Canceling obsolete check %s"
-                                    proc))
+                     (with-current-buffer source
+                       (if (eq proc flymake-credo--proc)
+                           (when-let* ((json-string (with-current-buffer (process-buffer proc) (buffer-string)))
+                                       (object (ignore-errors (json-parse-string json-string :null-object nil)))
+                                       (issues (gethash "issues" object)))
+                             (cl-loop
+                              for issue across issues
+                              for lineno = (or (gethash "line_no" issue) 0)
+                              for beg = (flymake-credo--get-pos lineno (flymake-credo--column-start issue))
+                              for end = (flymake-credo--get-pos lineno (flymake-credo--column-end issue))
+                              when lineno
+                              collect (flymake-make-diagnostic source
+                                                               beg
+                                                               end
+                                                               :warning
+                                                               (gethash "message" issue))
+                              into diags
+                              finally (funcall report-fn diags)))
+                         (flymake-log :warning "Cancelling obsolete check %s" proc)))
                    (kill-buffer (process-buffer proc))
                    (kill-buffer stderr-buffer-name))))))
 
