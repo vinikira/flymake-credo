@@ -75,7 +75,7 @@ be passed to the `--config-name' option"
   (save-excursion
     (save-restriction
       (widen)
-      (goto-line lineno)
+      (goto-line (or lineno 0))
       (funcall goto-column-fn)
       (1+ (current-column)))))
 
