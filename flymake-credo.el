@@ -75,7 +75,7 @@ be passed to the `--config-name' option"
   (save-excursion
     (save-restriction
       (widen)
-      (goto-line lineno)
+      (goto-line (or lineno 0))
       (funcall goto-column-fn)
       (1+ (current-column)))))
 
@@ -162,9 +162,9 @@ Check for problems, then call REPORT-FN with results."
              :stderr stderr-buffer-name
              :sentinel
              (lambda (proc _event)
-               (when (eq 'exit (process-status proc))
-                 (unwind-protect
-                     (with-current-buffer source
+               (when (and (buffer-live-p source) (eq 'exit (process-status proc)))
+                 (with-current-buffer source
+                   (unwind-protect
                        (if (eq proc flymake-credo--proc)
                            (when-let* ((json-string (with-current-buffer (process-buffer proc) (buffer-string)))
                                        (object (ignore-errors (json-parse-string json-string :null-object nil)))
@@ -174,7 +174,6 @@ Check for problems, then call REPORT-FN with results."
                               for lineno = (or (gethash "line_no" issue) 0)
                               for beg = (flymake-credo--get-pos lineno (flymake-credo--column-start issue))
                               for end = (flymake-credo--get-pos lineno (flymake-credo--column-end issue))
-                              when lineno
                               collect (flymake-make-diagnostic source
                                                                beg
                                                                end
@@ -182,9 +181,9 @@ Check for problems, then call REPORT-FN with results."
                                                                (gethash "message" issue))
                               into diags
                               finally (funcall report-fn diags)))
-                         (flymake-log :warning "Cancelling obsolete check %s" proc)))
-                   (kill-buffer (process-buffer proc))
-                   (kill-buffer stderr-buffer-name))))))
+                         (flymake-log :warning "Cancelling obsolete check %s" proc))))
+                 (kill-buffer (process-buffer proc))
+                 (kill-buffer stderr-buffer-name)))))
 
       (process-send-region flymake-credo--proc (point-min) (point-max))
       (process-send-eof flymake-credo--proc))))
